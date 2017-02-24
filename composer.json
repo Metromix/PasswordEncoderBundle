@@ -1,0 +1,24 @@
+{
+  "name": "metromix/password-encoder-bundle",
+  "description": "Metromix Password Encoder Bundle",
+  "keywords": ["password"],
+  "type": "symfony-bundle",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Dominik Labudzinski",
+      "email": "dominik@labudzinski.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "php": ">=7.0.0",
+    "symfony/symfony": "~3.0",
+    "symfony/security": "~3.0"
+  },
+  "autoload": {
+    "psr-0": { "Metromix\\PasswordEncoderBundle": "" }
+  },
+  "target-dir": "Metromix/PasswordEncoderBundle"
+}
