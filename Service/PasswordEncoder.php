@@ -32,6 +32,8 @@ class PasswordEncoder implements PasswordEncoderInterface
      */
     private $salt;
 
+    private $hasLibsodium = false;
+
     /**
      * Constructor.
      *
@@ -49,6 +51,9 @@ class PasswordEncoder implements PasswordEncoderInterface
 
         $this->cost = $cost;
         $this->salt = $salt;
+        if(function_exists('\Sodium\library_version_major') === true) {
+            $this->hasLibsodium = true;
+        }
     }
 
     /**
@@ -75,15 +80,49 @@ class PasswordEncoder implements PasswordEncoderInterface
     {
         $options = array('cost' => $this->cost);
 
-        $var = sprintf("pass_%s_%s", $raw, $salt);
-        $raw = hash('sha512', $var);
+        $raw = sprintf("pass_%s_%s", $raw, $salt);
         if($this->salt !== null) {
-            $raw = password_hash($raw, PASSWORD_BCRYPT, $options);
-            $aes = new AES($raw, $this->salt, 256);
+            if($this->hasLibsodium === true) {
+                $raw = \Sodium\crypto_pwhash_str(
+                    $raw,
+                    \Sodium\CRYPTO_PWHASH_OPSLIMIT_INTERACTIVE,
+                    \Sodium\CRYPTO_PWHASH_MEMLIMIT_INTERACTIVE
+                );
+                
+                $key = hash('md5', $this->salt);
+                $nonce = substr($key, 0, 12);
+                $aad = hash('sha384', $this->salt);
 
-            return $aes->encrypt();
+                if (\Sodium\crypto_aead_aes256gcm_is_available()) {
+                    $raw = \Sodium\crypto_aead_aes256gcm_encrypt(
+                        $raw,
+                        $aad,
+                        $nonce,
+                        $key
+                    );
+                } else {
+                    $raw = \Sodium\crypto_aead_chacha20poly1305_ietf_encrypt(
+                        $raw,
+                        $aad,
+                        $nonce,
+                        $key
+                    );
+                }
+                $encrypted = base64_encode($raw);
+                \Sodium\memzero($raw);
+                \Sodium\memzero($key);
+                \Sodium\memzero($nonce);
+                \Sodium\memzero($aad);
+            } else {
+                $raw = hash('sha512', $raw);
+                $raw = password_hash($raw, PASSWORD_BCRYPT, $options);
+                $aes = new AES($raw, $this->salt, 256);
+                $encrypted = $aes->encrypt();
+            }
+        } else {
+            $encrypted = $raw;
         }
-        return password_hash($raw, PASSWORD_BCRYPT, $options);
+        return $encrypted;
     }
 
     /**
@@ -95,14 +134,52 @@ class PasswordEncoder implements PasswordEncoderInterface
      *
      * @return bool true if the password is valid, false otherwise
      */
-    public function isPasswordValid($encoded, $raw, $salt)
+    public function isPasswordValid($encrypted, $raw, $salt)
     {
-        $var = sprintf("pass_%s_%s", $raw, $salt);
-        $raw = hash('sha512', $var);
+        $raw = sprintf("pass_%s_%s", $raw, $salt);
+        $raw = hash('sha512', $raw);
         if($this->salt !== null) {
-            $aes = new AES($encoded, $this->salt, 256);
+            if($this->hasLibsodium === true) {
+                $key = hash('md5', $this->salt);
+                $nonce = substr($key, 0, 12);
+                $aad = hash('sha384', $this->salt);
+                
+                $encrypted = base64_decode($encrypted);
+                if (\Sodium\crypto_aead_aes256gcm_is_available()) {
+                    $decrypted = \Sodium\crypto_aead_aes256gcm_decrypt(
+                        $encrypted,
+                        $aad,
+                        $nonce,
+                        $key
+                    );
+                } else {
+                    $decrypted = \Sodium\crypto_aead_chacha20poly1305_ietf_decrypt(
+                        $encrypted,
+                        $aad,
+                        $nonce,
+                        $key
+                    );
+                }
+                \Sodium\memzero($encrypted);
+                \Sodium\memzero($key);
+                \Sodium\memzero($nonce);
+                \Sodium\memzero($aad);
 
-            $encoded = $aes->decrypt();
+                if ($decrypted === false) {
+                    throw new \Exception("Bad ciphertext");
+                }
+                if (\Sodium\crypto_pwhash_str_verify($decrypted, $raw)) {
+                    \Sodium\memzero($raw);
+                    \Sodium\memzero($decrypted);
+                    return true;
+                }
+                \Sodium\memzero($raw);
+                \Sodium\memzero($decrypted);
+                return false;
+            } else {
+                $aes = new AES($encoded, $this->salt, 256);
+                $encoded = $aes->decrypt();
+            }
         }
         return password_verify($raw, $encoded);
     }
