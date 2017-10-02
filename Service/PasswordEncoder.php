@@ -14,6 +14,8 @@
 namespace Metromix\PasswordEncoderBundle\Service;
 
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
+use Symfony\Component\Security\Core\Exception\InvalidArgumentException;
+use Symfony\Component\Security\Core\Exception\AuthenticationServiceException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 
 /**
@@ -32,17 +34,15 @@ class PasswordEncoder implements PasswordEncoderInterface
      * Constructor.
      *
      * @param string $salt
-     * @throws \RuntimeException         When no BCrypt encoder is available
-     * @throws \InvalidArgumentException if cost is out of range
      */
     public function __construct($salt = null)
     {
         if($salt === null) {
-            throw new \InvalidArgumentException('Salt can not be empty.');
+            throw new InvalidArgumentException('Salt can not be empty.');
         }
         $this->salt = $salt;
         if(function_exists('\Sodium\library_version_major') !== true) {
-            throw new \InvalidArgumentException('Libsodium doesn\'t exist.');
+            throw new AuthenticationServiceException('Libsodium doesn\'t exist.');
         }
     }
 
@@ -157,17 +157,16 @@ class PasswordEncoder implements PasswordEncoderInterface
              * Clear memory for variables
              */
             \Sodium\memzero($raw);
-            \Sodium\memzero($decrypted);
-            throw new \Exception("Bad ciphertext");
+            throw new BadCredentialsException("Bad ciphertext");
         }
 
-        if (\Sodium\crypto_pwhash_str_verify($decrypted, $raw)) {
+        if (\Sodium\crypto_pwhash_str_verify($decrypted, $raw) === false) {
             /**
              * Clear memory for variables
              */
             \Sodium\memzero($raw);
             \Sodium\memzero($decrypted);
-            return true;
+            throw new BadCredentialsException("The presented password is invalid.");
         }
 
         /**
@@ -175,6 +174,7 @@ class PasswordEncoder implements PasswordEncoderInterface
          */
         \Sodium\memzero($raw);
         \Sodium\memzero($decrypted);
-        return false;
+
+        return true;
     }
 }
