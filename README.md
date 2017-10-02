@@ -12,7 +12,7 @@ $ php composer.phar require metromix/password-encoder-bundle
 Now, [Composer][1] will automatically download all required files, and install them
 for you.
 
-### Step2: Enable the bundle
+### Enable the bundle
 
 Enable the bundle in the kernel:
 
@@ -25,6 +25,22 @@ $bundles = [
     new Metromix\PasswordEncoderBundle\MetromixPasswordEncoderBundle(),
     // ...
 ];
+```
+
+### Update config
+Add configuration to security.yml
+
+```yml
+security:
+    encoders:
+        AppBundle\Entity\User:
+            id: metromix_encoder
+```
+
+Add parameters to config.yml
+```yml
+metromix_password_encoder:
+    salt: "<salt>"
 ```
 
 ## Requirements
