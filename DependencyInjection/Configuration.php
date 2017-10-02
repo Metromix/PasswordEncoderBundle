@@ -20,7 +20,7 @@ class Configuration implements ConfigurationInterface
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('metromix_password_encoder');
 
-        $rootNode->children()->scalarNode('salt')->defaultValue(hash('haval128,4', time()))->isRequired(true)->end();
+        $rootNode->children()->scalarNode('salt')->defaultValue(hash('haval128,4', time()))->isRequired()->end();
         return $treeBuilder;
     }
 }

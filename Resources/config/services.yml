@@ -1,4 +1,4 @@
 services:
     metromix_encoder:
         class: Metromix\PasswordEncoderBundle\Service\PasswordEncoder
-        arguments: [12, "%salt%"]
+        arguments: ["%salt%"]
