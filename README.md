@@ -1,3 +1,6 @@
+[![Latest Stable Version](https://poser.pugx.org/metromix/password-encoder-bundle/v/stable)](https://packagist.org/packages/metromix/password-encoder-bundle)[![License](https://poser.pugx.org/metromix/password-encoder-bundle/license)](https://packagist.org/packages/metromix/password-encoder-bundle)[![Total Downloads](https://poser.pugx.org/metromix/password-encoder-bundle/downloads)](https://packagist.org/packages/metromix/password-encoder-bundle)
+
+
 PasswordEncoderBundle
 =====================
 This Symfony-bundle add PHP Libsodium password encryption into your Symfony application.
