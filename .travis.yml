@@ -20,6 +20,3 @@ before_install:
   - pecl install -f libsodium-1.0.6
 
 install: composer update --prefer-dist --no-interaction $COMPOSER_FLAGS
-
-script:
- - make $TARGET
