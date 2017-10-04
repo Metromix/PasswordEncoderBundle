@@ -53,10 +53,6 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
         if(function_exists('\Sodium\library_version_major') !== true) {
             throw new AuthenticationServiceException('Libsodium doesn\'t exist.');
         }
-
-        if (\Sodium\crypto_aead_aes256gcm_is_available()) {
-            throw new AuthenticationServiceException('Libsodium AES256GCM doesn\'t exist.');
-        }
     }
 
     /**
@@ -89,15 +85,29 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
         $key = hash(self::HASH_ALGORITHM, $this->salt);
         $aad = hash(self::HASH_ALGORITHM, hash('whirlpool', $this->salt));
 
-        $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_NPUBBYTES);
-        $key = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_KEYBYTES);
+        /**
+         * Attempting to encrypt using AES256GCM
+         */
+        if (\Sodium\crypto_aead_aes256gcm_is_available()) {
+            $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_NPUBBYTES);
+            $key = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_KEYBYTES);
+            $raw = \Sodium\crypto_aead_aes256gcm_encrypt(
+                $raw,
+                $aad,
+                $nonce,
+                $key
+            );
+        } else {
+            $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES);
+            $key = substr($key, 0, \Sodium\CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES);
+            $raw = \Sodium\crypto_aead_chacha20poly1305_encrypt(
+                $raw,
+                $aad,
+                $nonce,
+                $key
+            );
+        }
 
-        $raw = \Sodium\crypto_aead_aes256gcm_encrypt(
-            $raw,
-            $aad,
-            $nonce,
-            $key
-        );
         $encrypted = base64_encode($raw);
 
         /**
@@ -134,25 +144,32 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
          * Create sha512 hash - always have same length
          */
         $raw = hash(self::HASH_ALGORITHM, $raw);
-        /**
-         * Hash by bcrypt with $cost
-         */
-        $raw = password_hash($raw, PASSWORD_BCRYPT, ['cost' => $this->cost]);
 
         $key = hash(self::HASH_ALGORITHM, $this->salt);
         $aad = hash(self::HASH_ALGORITHM, hash('whirlpool', $this->salt));
 
         /**
-         * Decrypt AES
+         * Attempting to decrypt using AES256GCM
          */
-        $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_NPUBBYTES);
-        $key = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_KEYBYTES);
-        $decrypted = \Sodium\crypto_aead_aes256gcm_decrypt(
-            $encrypted,
-            $aad,
-            $nonce,
-            $key
-        );
+        if (\Sodium\crypto_aead_aes256gcm_is_available()) {
+            $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_NPUBBYTES);
+            $key = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_KEYBYTES);
+            $decrypted = \Sodium\crypto_aead_aes256gcm_decrypt(
+                $encrypted,
+                $aad,
+                $nonce,
+                $key
+            );
+        } else {
+            $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES);
+            $key = substr($key, 0, \Sodium\CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES);
+            $decrypted = \Sodium\crypto_aead_chacha20poly1305_decrypt(
+                $encrypted,
+                $aad,
+                $nonce,
+                $key
+            );
+        }
 
         /**
          * Clear memory for variables
