@@ -1,3 +1,3 @@
 #!/bin/bash
-add-apt-repository --yes ppa:ondrej/php
-apt-get update && apt-get install libsodium-dev;
+sudo add-apt-repository --yes ppa:ondrej/php
+sudo apt-get update && sudo apt-get install libsodium-dev;

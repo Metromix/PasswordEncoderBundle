@@ -9,6 +9,13 @@ env:
 matrix:
   fast_finish: true
 
+addons:
+  apt:
+    sources:
+      - ppa:ondrej/php
+    packages: &default_packages
+      - libsodium-dev
+
 sudo: false
 dist: trusty
 
@@ -17,7 +24,6 @@ cache:
     - $HOME/.composer/cache
 
 before_install:
-  - chmod +x ./.travis-libsodium.sh && ./.travis-libsodium.sh
   - pecl install -f libsodium-1.0.6
 
 install: composer update --prefer-dist --no-interaction $COMPOSER_FLAGS
