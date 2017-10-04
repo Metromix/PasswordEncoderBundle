@@ -14,16 +14,16 @@
 
     <testsuites>
         <testsuite name="MetromixPasswordEncoderBundle Test Suite">
-            <directory>./Tests/</directory>
+            <directory>./src/Tests/</directory>
         </testsuite>
     </testsuites>
 
     <filter>
         <whitelist>
-            <directory>./</directory>
+            <directory>./src/</directory>
             <exclude>
-                <directory>./Resources</directory>
-                <directory>./Tests</directory>
+                <directory>./src/Resources</directory>
+                <directory>./src/Tests</directory>
                 <directory>./vendor</directory>
             </exclude>
         </whitelist>

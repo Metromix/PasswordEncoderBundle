@@ -1,0 +1,11 @@
+parameters:
+    metromix_encoder.basic_class: 'Metromix\PasswordEncoderBundle\Security\Encoder\PasswordEncoder'
+    metromix_encoder.strong_class: 'Metromix\PasswordEncoderBundle\Security\Encoder\StrongPasswordEncoder'
+
+services:
+    metromix_encoder.basic:
+        class: '%metromix_encoder.basic_class%'
+        arguments: [12, "%salt%"]
+    metromix_encoder.strong:
+        class: '%metromix_encoder.strong_class%'
+        arguments: ["%salt%"]

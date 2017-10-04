@@ -10,12 +10,11 @@
  * @author Dominik Labudzinski <dominik@labudzinski.com>
  * @name PasswordEncoderTest.php - 02-10-2017 10:49
  */
+namespace Metromix\PasswordEncoderBundle\Tests;
 
+use Metromix\PasswordEncoderBundle\Security\Encoder\PasswordEncoder;
 
-use Metromix\PasswordEncoderBundle\Service\PasswordEncoder;
-
-
-class PasswordEncoderTest extends PHPUnit_Framework_TestCase
+class PasswordEncoderTest extends \PHPUnit_Framework_TestCase
 {
     public function testLibsodiumEncode()
     {

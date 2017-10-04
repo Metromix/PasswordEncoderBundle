@@ -11,7 +11,7 @@
  * @name PasswordEncoder.php - 13-12-2016 11:23
  */
 
-namespace Metromix\PasswordEncoderBundle\Service;
+namespace Metromix\PasswordEncoderBundle\Security\Encoder;
 
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 use Symfony\Component\Security\Core\Exception\InvalidArgumentException;
