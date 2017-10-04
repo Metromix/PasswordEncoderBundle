@@ -12,7 +12,7 @@ matrix:
 addons:
   apt:
     sources:
-      - ppa:ondrej/php
+      - sourceline: 'ppa:ondrej/php'
     packages: &default_packages
       - libsodium-dev
 
