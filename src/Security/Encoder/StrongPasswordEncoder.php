@@ -1,8 +1,9 @@
 <?php
+declare(strict_types = 1);
 /*
  * This file is part of the BrandOriented package.
  *
- * (c) Brand Oriented sp. z o.o.
+ * (c) Metromix.pl
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -13,6 +14,7 @@
 
 namespace Metromix\PasswordEncoderBundle\Security\Encoder;
 
+use Metromix\PasswordEncoderBundle\Sodium;
 use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
 use Symfony\Component\Security\Core\Exception\InvalidArgumentException;
 use Symfony\Component\Security\Core\Exception\AuthenticationServiceException;
@@ -50,7 +52,7 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
             throw new InvalidArgumentException('Salt can not be empty.');
         }
         $this->salt = $salt;
-        if(function_exists('\Sodium\library_version_major') !== true) {
+        if(extension_loaded("sodium") === false && extension_loaded("libsodium") === false) {
             throw new AuthenticationServiceException('Libsodium doesn\'t exist.');
         }
     }
@@ -67,7 +69,7 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
      *
      * @see http://lxr.php.net/xref/PHP_5_5/ext/standard/password.c#111
      */
-    public function encodePassword($raw, $salt)
+    public function encodePassword($raw, $salt): string
     {
         /**
          * Add salt to password
@@ -88,19 +90,19 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
         /**
          * Attempting to encrypt using AES256GCM
          */
-        if (\Sodium\crypto_aead_aes256gcm_is_available()) {
-            $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_NPUBBYTES);
-            $key = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_KEYBYTES);
-            $raw = \Sodium\crypto_aead_aes256gcm_encrypt(
+        if (Sodium::crypto_aead_aes256gcm_is_available()) {
+            $nonce = substr($key, 0, Sodium::CRYPTO_AEAD_AES256GCM_NPUBBYTES);
+            $key = substr($key, 0, Sodium::CRYPTO_AEAD_AES256GCM_KEYBYTES);
+            $raw = Sodium::crypto_aead_aes256gcm_encrypt(
                 $raw,
                 $aad,
                 $nonce,
                 $key
             );
         } else {
-            $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES);
-            $key = substr($key, 0, \Sodium\CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES);
-            $raw = \Sodium\crypto_aead_chacha20poly1305_encrypt(
+            $nonce = substr($key, 0, Sodium::CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES);
+            $key = substr($key, 0, Sodium::CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES);
+            $raw = Sodium::crypto_aead_chacha20poly1305_encrypt(
                 $raw,
                 $aad,
                 $nonce,
@@ -113,10 +115,10 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
         /**
          * Clear memory for variables
          */
-        \Sodium\memzero($raw);
-        \Sodium\memzero($key);
-        \Sodium\memzero($nonce);
-        \Sodium\memzero($aad);
+        Sodium::memzero($raw);
+        Sodium::memzero($key);
+        Sodium::memzero($nonce);
+        Sodium::memzero($aad);
 
         return $encrypted;
     }
@@ -130,7 +132,7 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
      * @return bool true if the password is valid, false otherwise
      * @throws \Exception
      */
-    public function isPasswordValid($encrypted, $raw, $salt)
+    public function isPasswordValid($encrypted, $raw, $salt): bool
     {
         /**
          * Decode base64
@@ -151,19 +153,19 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
         /**
          * Attempting to decrypt using AES256GCM
          */
-        if (\Sodium\crypto_aead_aes256gcm_is_available()) {
-            $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_NPUBBYTES);
-            $key = substr($key, 0, \Sodium\CRYPTO_AEAD_AES256GCM_KEYBYTES);
-            $decrypted = \Sodium\crypto_aead_aes256gcm_decrypt(
+        if (Sodium::crypto_aead_aes256gcm_is_available()) {
+            $nonce = substr($key, 0, Sodium::CRYPTO_AEAD_AES256GCM_NPUBBYTES);
+            $key = substr($key, 0, Sodium::CRYPTO_AEAD_AES256GCM_KEYBYTES);
+            $decrypted = Sodium::crypto_aead_aes256gcm_decrypt(
                 $encrypted,
                 $aad,
                 $nonce,
                 $key
             );
         } else {
-            $nonce = substr($key, 0, \Sodium\CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES);
-            $key = substr($key, 0, \Sodium\CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES);
-            $decrypted = \Sodium\crypto_aead_chacha20poly1305_decrypt(
+            $nonce = substr($key, 0, Sodium::CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES);
+            $key = substr($key, 0, Sodium::CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES);
+            $decrypted = Sodium::crypto_aead_chacha20poly1305_decrypt(
                 $encrypted,
                 $aad,
                 $nonce,
@@ -174,15 +176,15 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
         /**
          * Clear memory for variables
          */
-        \Sodium\memzero($encrypted);
-        \Sodium\memzero($key);
-        \Sodium\memzero($nonce);
-        \Sodium\memzero($aad);
+        Sodium::memzero($encrypted);
+        Sodium::memzero($key);
+        Sodium::memzero($nonce);
+        Sodium::memzero($aad);
         if ($decrypted === false) {
             /**
              * Clear memory for variables
              */
-            \Sodium\memzero($raw);
+            Sodium::memzero($raw);
             throw new BadCredentialsException("Bad ciphertext");
         }
 
@@ -190,16 +192,16 @@ class StrongPasswordEncoder implements PasswordEncoderInterface
             /**
              * Clear memory for variables
              */
-            \Sodium\memzero($raw);
-            \Sodium\memzero($decrypted);
+            Sodium::memzero($raw);
+            Sodium::memzero($decrypted);
             throw new BadCredentialsException("The presented password is invalid.");
         }
 
         /**
          * Clear memory for variables
          */
-        \Sodium\memzero($raw);
-        \Sodium\memzero($decrypted);
+        Sodium::memzero($raw);
+        Sodium::memzero($decrypted);
 
         return true;
     }

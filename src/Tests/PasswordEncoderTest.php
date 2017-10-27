@@ -2,7 +2,7 @@
 /*
  * This file is part of the BrandOriented package.
  *
- * (c) Brand Oriented sp. z o.o.
+ * (c) Metromix.pl
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -18,7 +18,7 @@ class PasswordEncoderTest extends \PHPUnit_Framework_TestCase
 {
     public function testLibsodiumEncode()
     {
-        $this->assertTrue(function_exists('\Sodium\library_version_major'));
+        $this->assertTrue((extension_loaded("sodium") !== false || extension_loaded("libsodium") !== false));
         $globalSalt = hash('sha512', time());
         $plainPassword = uniqid();
         $plainSalt = hash('sha512', time()*time());
