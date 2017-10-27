@@ -32,7 +32,5 @@
   },
   "autoload-dev": {
     "psr-4": { "Metromix\\PasswordEncoderBundle\\Tests\\": "src/" }
-  },
-
-  "target-dir": "Metromix/PasswordEncoderBundle"
+  }
 }
